@@ -6,14 +6,14 @@ test('login accesible, errores claros y ningún dato privado antes de autenticar
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
-  await expect(page.getByRole('heading', { name: 'Bienvenidos a casa.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Lo mejor de la vida, contigo.' })).toBeVisible();
   await expect(page.locator('.auth-page')).toHaveCSS('display', 'grid');
   await expect(page.locator('.gallery')).toHaveCount(0);
   expect(mock.requests.some((request) => request.path.includes('album_photos'))).toBe(false);
   await page.screenshot({ path: 'test-results/login-desktop.png', fullPage: true });
   await page.getByLabel('Tu correo electrónico').fill(user.email);
   await page.getByLabel('Tu contraseña', { exact: true }).fill('INVALIDA_DE_PRUEBA');
-  await page.getByRole('button', { name: 'Entrar a nuestro álbum' }).click();
+  await page.getByRole('button', { name: 'Ingresar' }).click();
   await expect(page.getByRole('status')).toContainText('Correo o contraseña incorrectos.');
   expect(errors).toEqual([]);
 });
@@ -102,7 +102,7 @@ test('recuperación usa la subruta correcta y cambio de contraseña funciona con
   await page.getByLabel('Nueva contraseña').fill('NUEVA_SOLO_PARA_PRUEBA');
   await page.getByLabel('Repite la contraseña').fill('NUEVA_SOLO_PARA_PRUEBA');
   await page.getByRole('button', { name: 'Guardar contraseña' }).click();
-  await expect(page.getByRole('heading', { name: 'Bienvenidos a casa.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Lo mejor de la vida, contigo.' })).toBeVisible();
   expect(mock.requests.some((request) => request.path === '/auth/v1/user' && request.method === 'PUT')).toBe(true);
 });
 

@@ -71,7 +71,7 @@ export async function login(page) {
   await page.goto('./');
   await page.getByLabel('Tu correo electrónico').fill(user.email);
   await page.getByLabel('Tu contraseña', { exact: true }).fill('SOLO_PRUEBA_NO_ES_REAL');
-  await page.getByRole('button', { name: 'Entrar a nuestro álbum' }).click();
+  await page.getByRole('button', { name: 'Ingresar' }).click();
 }
 
 export async function fixtureImage(page, width = 1200, height = 800) {
