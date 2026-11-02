@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.npm-cache/
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+*.log
+.aws/
+coverage/
+playwright-report/
+test-results/
+.DS_Store
+Thumbs.db
