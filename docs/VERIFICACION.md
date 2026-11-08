@@ -36,3 +36,23 @@ La última compilación queda con base `/` y la configuración pública local; m
 - Publicación con GitHub Actions, plan de GitHub y URL final: no se creó ni se publicó un repositorio remoto.
 
 La API simulada permite verificar el código y los flujos, pero no demuestra el aislamiento del proyecto real. Completa `SEGURIDAD.md`, la matriz real de `PRUEBAS.md` y los pasos de `DESPLIEGUE.md` antes de publicar. No se aplicó SQL remoto ni se publicó el sitio.
+
+## Verificación de las mejoras v2 (7 de noviembre de 2026)
+
+Ejecutado en Windows 11 con Node 26 y Chrome instalado. Todo contra Supabase y Cloudflare simulados; no se tocó el proyecto real.
+
+| Comando | Resultado |
+| --- | --- |
+| `npm run check` | 44 archivos sin errores de sintaxis |
+| `npm test` | 68 pruebas unitarias en verde (21 anteriores + 47 nuevas) |
+| `npm run test:e2e` | 46 pruebas en verde (26 anteriores + 20 nuevas); también 138/138 repitiendo la suite tres veces |
+| `npm run build` con `VITE_BASE_PATH=/project_album/` | Compilación correcta; CSP con `media-src` y sin Turnstile al no haber sitekey |
+| `npm run check:dist` | Sin `.env`, sourcemaps ni claves secretas (Supabase o Turnstile) |
+| `npm run test:build` | Producción servida en `/project_album/` sin errores |
+| `npm audit` | 0 vulnerabilidades; no se añadieron dependencias |
+
+Los SQL v2 se reescribieron tras conocer el estado real de Supabase (ver [Auditoría SQL v2](SQL_V2_AUDIT.md)). En PostgreSQL 18 local (PGlite), sobre una réplica de ese estado: PASO 1 y PASO 2 aplicados dos veces sin errores, `verify-v2.sql` con 51 comprobaciones en `ok = true`, 76 comprobaciones de comportamiento correctas (permisos por columna, rutas, Storage sin UPDATE, borrado compartido, rutas heredadas) y las precondiciones detienen la ejecución sin aplicar nada.
+
+**Aplicación en Supabase real (8 de noviembre de 2026, por el propietario):** se ejecutaron el PASO 1 (`supabase/migrations/20261106_recuerdos_v2.sql`) y el PASO 2 (`supabase/proposed-policies.sql`). `supabase/verify-v2.sql` dio 51/51 `ok = true` y se conservaron los 3 recuerdos existentes. El propietario también informó que las pruebas con las dos cuentas en la app local pasaron (11 de 11).
+
+Pendiente (manual, del propietario): `npm run check:remote` contra el proyecto real y, si se desea, configurar Turnstile siguiendo [Mejoras v2](MEJORAS.md#3-captcha-con-cloudflare-turnstile).

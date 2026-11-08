@@ -38,6 +38,8 @@ La app consulta solo `album_members.user_id` y las seis columnas existentes de `
 | `uploaded_by` | UUID verificado con `auth.getUser()`; RLS debe exigir `auth.uid()` al insertar |
 | `created_at` | ISO UTC de subida, enviado explícitamente; no depende de un default desconocido |
 
+**v2:** la migración `supabase/migrations/20261106_recuerdos_v2.sql` añade `media_type`, `memory_date`, `place`, `display_path` y `duration_seconds`, y permite editar solo `memory_date` y `place`. La app funciona con y sin ella. Detalles en [Mejoras v2](MEJORAS.md).
+
 `created_at` refleja el reloj del dispositivo. Si necesitas una hora de servidor inalterable, requiere revisar el default/trigger existente y preparar una migración posterior; no se ha supuesto ni añadido un trigger. Se mantienen las PK, FK y unicidad descritas; el script de auditoría permite comprobarlas. No hace falta una nueva columna para este diseño.
 
 ## Storage

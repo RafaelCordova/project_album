@@ -52,7 +52,7 @@ for (const [width, height] of screens) {
     await expect.poll(() => page.locator('.photo-open img').evaluateAll((images) => images.every((image) => image.complete && image.naturalWidth > 0))).toBe(true);
     for (const theme of ['neutral', 'blue', 'rose']) {
       await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
-      await withinScreen(page, '.header-inner, .account, .album-main, .album-hero, .upload-zone, .gallery-toolbar, .photo-grid, .photo-card, .site-footer');
+      await withinScreen(page, '.header-inner, .account, .album-main, .album-hero, .upload-zone, .gallery-toolbar, .toolbar-actions, .mix-button, .filters, .filter-field, .month-heading, .photo-grid, .photo-card, .photo-info, .site-footer');
       if ([320, 820, 1920].includes(width) && theme === 'rose') await page.screenshot({ path: testInfo.outputPath(`album-${width}.png`), fullPage: true });
     }
     await page.locator('.photo-open').first().click();
@@ -85,7 +85,7 @@ for (const [width, height] of screens) {
       await expect(page.getByRole('button', { name, exact: true })).toBeInViewport({ ratio: 0.99 });
     }
     await page.getByRole('button', { name: 'Conservar recuerdo' }).click();
-    await touchTargets(page, '.account button, .delete-photo');
+    await touchTargets(page, '.account button, .delete-photo, .edit-photo, .mix-button, .filter-field select');
     await expect(page.getByRole('button', { name: 'Cambiar contraseña', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Cambiar contraseña', exact: true }).click();
     await expect(page.getByLabel('Nueva contraseña')).toBeVisible();
@@ -103,6 +103,12 @@ test('mensajes, cola de subida y estado vacío a 320 px', async ({ page }) => {
   await page.locator('#photo-files').setInputFiles({ name: `${longName}.svg`, mimeType: 'image/svg+xml', buffer: Buffer.from('archivo de prueba rechazado') });
   await expect(page.locator('.queue-error')).toBeVisible();
   await withinScreen(page, '.upload-zone, .upload-queue, .queue-name, .queue-status');
+  // v2: vista previa antes de subir, con fecha y lugar, también cabe a 320 px.
+  await page.locator('#photo-files').setInputFiles({ name: `${longName}`, mimeType: 'image/png', buffer: await fixtureImage(page, 400, 300) });
+  await expect(page.locator('.upload-panel')).toBeVisible();
+  await withinScreen(page, '.upload-panel, .upload-previews, .upload-preview, .upload-fields, .upload-fields input, .upload-panel-actions');
+  await touchTargets(page, '.upload-panel button, .upload-fields input');
+  await page.getByRole('button', { name: 'Cancelar' }).click();
   await page.evaluate(async () => {
     const { notify } = await import('/prueba-album/src/components/ui.js');
     notify(`Aviso de prueba ${'referencia_larga_'.repeat(45)}`, 'error');

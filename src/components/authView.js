@@ -1,4 +1,5 @@
 import { brand, button, element, icon } from './ui.js';
+import { attachPasswordToggle } from './passwordToggle.js';
 
 export function authView(mode = 'login') {
   const page = element('main', 'auth-page');
@@ -22,12 +23,19 @@ export function authView(mode = 'login') {
     form.innerHTML = '<label for="email">Tu correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" maxlength="254" required placeholder="tu@correo.com" />';
     if (mode === 'login') form.insertAdjacentHTML('beforeend', '<label for="password">Tu contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" maxlength="128" required placeholder="Tu contraseña" />');
   }
+  form.querySelectorAll('input[type="password"]').forEach((input) => attachPasswordToggle(input));
+  // Contenedor del widget CAPTCHA (solo se usa si hay una sitekey configurada).
+  const captcha = element('div', 'captcha-box');
+  captcha.hidden = true;
+  const captchaRetry = button('Reintentar verificación', 'refresh', 'text-button captcha-retry');
+  captchaRetry.hidden = true;
   const status = element('p', 'form-status');
   status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite');
   const submit = button(mode === 'login' ? 'Ingresar' : mode === 'recover' ? 'Enviar enlace de recuperación' : 'Guardar contraseña', 'arrow', 'button primary full');
   submit.type = 'submit';
   if (mode === 'login') submit.classList.add('login-submit');
+  if (mode !== 'password') form.append(captcha, captchaRetry);
   form.append(status, submit);
   const alternate = button(mode === 'login' ? '¿Olvidaste tu contraseña?' : mode === 'password' ? 'Cerrar sesión' : 'Volver al inicio de sesión', null, 'text-button auth-alternate');
   const privacy = element('p', 'privacy-note');
@@ -35,5 +43,5 @@ export function authView(mode = 'login') {
   formWrap.append(form, alternate, privacy);
   panel.append(formWrap, element('p', 'auth-bottom', 'Una historia que seguimos escribiendo juntos.'));
   page.append(story, panel);
-  return { page, form, submit, status, alternate };
+  return { page, form, submit, status, alternate, captcha, captchaRetry };
 }

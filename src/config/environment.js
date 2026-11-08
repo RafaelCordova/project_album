@@ -15,11 +15,22 @@ export function readConfig(env) {
       throw new Error('Configura una clave publicable de Supabase o la clave heredada anon.');
     }
   }
-  if (!url || !key || key.includes('COPIA_AQUI')) return { ready: false, message: 'Completa VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY en .env.local y reinicia Vite.' };
+  const captchaSiteKey = readCaptchaSiteKey(env);
+  if (!url || !key || key.includes('COPIA_AQUI')) return { ready: false, captchaSiteKey, message: 'Completa VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY en .env.local y reinicia Vite.' };
   let parsed;
   try { parsed = new URL(url); } catch { throw new Error('VITE_SUPABASE_URL no es una URL válida.'); }
   if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.search || parsed.hash || parsed.pathname !== '/') {
     throw new Error('La URL de Supabase debe ser un origen HTTPS sin credenciales, ruta ni parámetros.');
   }
-  return { ready: true, url: parsed.origin, key };
+  return { ready: true, url: parsed.origin, key, captchaSiteKey };
+}
+
+// Clave PÚBLICA (sitekey) de Cloudflare Turnstile. Opcional: vacía = CAPTCHA desactivado en el frontend.
+// Las claves secretas de Turnstile son más largas (~35 caracteres) y nunca deben llegar aquí.
+export function readCaptchaSiteKey(env) {
+  const siteKey = (env.VITE_TURNSTILE_SITE_KEY || '').trim();
+  if (!siteKey || siteKey.includes('COPIA_AQUI')) return '';
+  if (siteKey.length > 30) throw new Error('VITE_TURNSTILE_SITE_KEY parece una clave secreta de Turnstile. Usa solo la sitekey pública.');
+  if (!/^[0-9]x[0-9A-Za-z_-]{16,28}$/.test(siteKey)) throw new Error('VITE_TURNSTILE_SITE_KEY no tiene el formato de una sitekey de Turnstile.');
+  return siteKey;
 }

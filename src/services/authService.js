@@ -16,18 +16,19 @@ export function createAuthService(client) {
       if (!result.data) throw new AlbumError('Esta cuenta no pertenece al álbum. El propietario debe revisar album_members.');
       return user;
     },
-    async signIn(email, password) {
-      const { error } = await client.auth.signInWithPassword({ email: email.trim(), password });
+    // captchaToken lo valida Supabase Auth en su servidor cuando CAPTCHA está activo en el panel.
+    async signIn(email, password, captchaToken) {
+      const { error } = await client.auth.signInWithPassword({ email: email.trim(), password, ...(captchaToken ? { options: { captchaToken } } : {}) });
       if (error) throw error;
     },
     async signOut() {
       const { error } = await client.auth.signOut({ scope: 'local' });
       if (error) throw error;
     },
-    async recover(email) {
+    async recover(email, captchaToken) {
       const redirect = new URL(import.meta.env?.BASE_URL || '/', window.location.origin);
       redirect.searchParams.set('recovery', '1');
-      const { error } = await client.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirect.href });
+      const { error } = await client.auth.resetPasswordForEmail(email.trim(), { redirectTo: redirect.href, ...(captchaToken ? { captchaToken } : {}) });
       if (error) throw error;
     },
     async updatePassword(password) {

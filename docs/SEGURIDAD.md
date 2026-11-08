@@ -21,7 +21,17 @@ Abre `supabase/audit.sql` en el SQL Editor como propietario y ejecuta el archivo
 
 Las políticas permisivas se combinan con **OR**: agregar otra más estricta no elimina una existente demasiado amplia. Las restrictivas se combinan con **AND**, pero necesitan al menos una política permisiva que autorice la operación. La propuesta agrega un límite restrictivo además de permisos concretos.
 
-`supabase/proposed-policies.sql` es una **propuesta para revisión, no aplicada**. No borra datos ni recrea tablas; revoca privilegios de cliente y agrega políticas. Debe compararse con la auditoría y autorizarse antes de ejecutarla. Puede romper otros clientes que dependan de editar metadatos o miembros. No elimina políticas desconocidas ni corrige automáticamente funciones, vistas o roles heredados. Si hay políticas restrictivas antiguas de propietario, deben prepararse cambios por sus nombres reales en una migración autorizada. Guarda las definiciones y grants actuales para poder revertir cambios. No ejecutes esta propuesta a ciegas ni añadas una clave administrativa al frontend para resolver permisos.
+`supabase/proposed-policies.sql` es el **PASO 2 de v2 (permisos y RLS), no aplicado**. Se ejecuta después de `supabase/migrations/20261106_recuerdos_v2.sql`. No borra datos ni recrea tablas: revoca privilegios de cliente (de tabla y de cada columna), sustituye por nombre exacto las 8 políticas `Album members can …` informadas por el propietario, conserva la de membresía y añade guardas RESTRICTIVE. Se detiene si encuentra políticas desconocidas que puedan afectar al álbum, en lugar de eliminarlas. Guarda las definiciones y grants actuales (`audit.sql`) para poder revertir cambios. Detalles: [Auditoría SQL v2](SQL_V2_AUDIT.md). No añadas una clave administrativa al frontend para resolver permisos.
+
+## Cambios de seguridad de la v2
+
+- **Edición**: solo `memory_date` y `place`, mediante privilegios por columna más la política `album_v2_photos_update_details` (requiere membresía). Rutas, autor, tipo y duración siguen inmutables; en la réplica local se verificó que cambiar cualquiera de las otras 9 columnas se deniega.
+- **Inserción**: `INSERT` solo de las 11 columnas que envía la app; RLS exige `uploaded_by = auth.uid()` y rutas exactas `<carpeta>/<auth.uid()>/<id de la fila>.<ext>`.
+- **Storage**: cada miembro sube solo a sus carpetas, con nombre UUID y extensiones del álbum; ninguna política de UPDATE (no se sobrescribe ni se mueve nada); lectura y borrado compartidos.
+- **Videos**: el bucket admite además `video/mp4`; sigue privado y con 10 MB. Los 5 MB y 15 s se validan en el cliente; la base de datos rechaza duraciones mayores de 15 s y MP4 registrados como foto. Ver limitaciones en [Mejoras v2](MEJORAS.md#7-limitaciones-conocidas).
+- **Eliminación**: borra original, miniatura y `display/`, y comprueba que ninguna otra fila use esas rutas.
+- **CAPTCHA**: la sitekey es pública y la secreta solo vive en Supabase. La compilación rechaza valores con forma de clave secreta y `check:dist` los busca en `dist`. La CSP solo autoriza `challenges.cloudflare.com` cuando hay sitekey y añade `media-src` para los videos firmados.
+- `npm run check:remote` comprueba sin sesión y sin escribir que el proyecto real no expone filas ni archivos.
 
 ## Tratamiento de archivos y fallos parciales
 

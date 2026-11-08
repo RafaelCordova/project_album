@@ -1,4 +1,6 @@
 -- AUDITORÍA DE SOLO LECTURA. Ejecutar manualmente en SQL Editor como propietario.
+-- IMPORTANTE: el SQL Editor solo muestra el resultado de la última sentencia. Selecciona cada
+-- bloque numerado (sin "begin"/"rollback") y usa "Run selected" para ver su resultado.
 -- No modifica datos, políticas, tablas ni archivos. No pegar resultados con datos personales en público.
 begin read only;
 
@@ -44,9 +46,12 @@ from information_schema.column_privileges
 where table_schema = 'public' and table_name in ('album_members', 'album_photos')
 order by table_name, grantee, column_name;
 
--- 6. Bucket: private, límite 10485760, MIME JPEG/PNG/WebP. No se cambia nada.
+-- 6. Bucket: privado y con límite de 10 MB. Antes de v2: MIME JPEG/PNG/WebP; después: además video/mp4. No se cambia nada.
 select id, name, public, file_size_limit, allowed_mime_types
 from storage.buckets where id = 'recuerdos';
+
+-- 7b. Cantidad de recuerdos: anótala y compárala con la fila 20 de verify-v2.sql.
+select count(*) as recuerdos from public.album_photos;
 
 -- 7. Exactamente los dos UUID reales previstos. No insertar desde el navegador.
 select user_id, count(*) as occurrences from public.album_members group by user_id;
@@ -70,7 +75,9 @@ where event_object_schema = 'public' and event_object_table in ('album_members',
 -- 9. Archivos sin metadatos. Una subida en curso puede aparecer aquí: no borrar automáticamente.
 select o.name, o.created_at from storage.objects o
 where o.bucket_id = 'recuerdos'
-and not exists (select 1 from public.album_photos p where p.storage_path = o.name or p.thumbnail_path = o.name);
+and not exists (select 1 from public.album_photos p where p.storage_path = o.name or p.thumbnail_path = o.name)
+-- Tras la migración v2 añade también: and not exists (select 1 from public.album_photos p where p.display_path = o.name)
+;
 
 -- 10. Registros con originales o miniaturas ausentes; útil para eliminaciones pendientes.
 select p.id, p.storage_path, p.thumbnail_path,
@@ -79,5 +86,23 @@ select p.id, p.storage_path, p.thumbnail_path,
 from public.album_photos p
 where not exists (select 1 from storage.objects o where o.bucket_id = 'recuerdos' and o.name = p.storage_path)
 or (p.thumbnail_path is not null and not exists (select 1 from storage.objects o where o.bucket_id = 'recuerdos' and o.name = p.thumbnail_path));
+
+-- 11. v2 (supabase/migrations/20261106_recuerdos_v2.sql + supabase/proposed-policies.sql).
+-- La verificación completa con ok = true/false está en supabase/verify-v2.sql.
+-- 11a. Estado de las columnas v2 (0 filas antes de migrar; 5 después). No falla en ningún momento.
+select column_name, data_type, is_nullable, column_default
+from information_schema.columns
+where table_schema = 'public' and table_name = 'album_photos'
+and column_name in ('media_type', 'memory_date', 'place', 'display_path', 'duration_seconds')
+order by column_name;
+
+-- 11b. SOLO TRAS LA MIGRACIÓN (falla antes por columna inexistente; es lo esperado):
+-- descomenta para contar por tipo y revisar archivos display/ sin registro o registros sin su display/.
+-- select media_type, count(*) as total, count(memory_date) as con_fecha, count(place) as con_lugar, count(display_path) as optimizadas
+-- from public.album_photos group by media_type;
+-- select o.name from storage.objects o where o.bucket_id = 'recuerdos' and o.name like 'display/%'
+-- and not exists (select 1 from public.album_photos p where p.display_path = o.name);
+-- select p.id, p.display_path from public.album_photos p where p.display_path is not null
+-- and not exists (select 1 from storage.objects o where o.bucket_id = 'recuerdos' and o.name = p.display_path);
 
 rollback;

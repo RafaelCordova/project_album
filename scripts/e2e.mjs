@@ -6,6 +6,8 @@ import { createServer } from 'vite';
 process.env.VITE_BASE_PATH = '/prueba-album/';
 process.env.VITE_SUPABASE_URL = 'https://ycomlinemyhlwjaklxju.supabase.co';
 process.env.VITE_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_TEST_ONLY_NOT_A_REAL_KEY';
+// Sitekey de PRUEBA documentada por Cloudflare (siempre pasa). Su script se simula en tests/e2e/fixtures.js.
+process.env.VITE_TURNSTILE_SITE_KEY = '1x00000000000000000000AA';
 const server = await createServer({ mode: 'e2e', server: { host: '127.0.0.1', port: 5174, strictPort: true, hmr: false } });
 try {
   await server.listen();

@@ -1,9 +1,11 @@
 import { defineConfig, loadEnv } from 'vite';
 import { readConfig } from './src/config/environment.js';
 
+const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
+
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), 'VITE_'), ...Object.fromEntries(Object.entries(process.env).filter(([key]) => key.startsWith('VITE_'))) };
-  const allowed = new Set(['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'VITE_SUPABASE_ANON_KEY', 'VITE_BASE_PATH']);
+  const allowed = new Set(['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'VITE_SUPABASE_ANON_KEY', 'VITE_BASE_PATH', 'VITE_TURNSTILE_SITE_KEY']);
   for (const key of Object.keys(env)) if (!allowed.has(key)) throw new Error(`Variable pública no prevista: ${key}. Revisa que no sea un secreto.`);
   const config = readConfig(env); // Impide compilar claves secretas o JWT con privilegios.
   const base = env.VITE_BASE_PATH || '/';
@@ -17,7 +19,11 @@ export default defineConfig(({ mode }) => {
     plugins: [{
       name: 'album-csp',
       transformIndexHtml(html, context) {
-        const output = html.replaceAll('__SUPABASE_ORIGIN__', origin);
+        let output = html.replaceAll('__SUPABASE_ORIGIN__', origin);
+        // Turnstile solo se autoriza cuando hay una sitekey configurada.
+        output = config.captchaSiteKey
+          ? output.replace("script-src 'self'", `script-src 'self' ${TURNSTILE_ORIGIN}`).replace("object-src 'none'", `object-src 'none'; frame-src ${TURNSTILE_ORIGIN}`)
+          : output;
         // Solo desarrollo: permite la conexión de Vite al loopback para HMR.
         return context.server ? output.replace("connect-src 'self'", "connect-src 'self' ws://127.0.0.1:* ws://localhost:*") : output;
       },

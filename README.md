@@ -64,6 +64,17 @@ Los UUID de temas solo cambian la apariencia. Las cuentas sin asociación usan e
 
 Las fechas corresponden a la subida y se muestran en la zona horaria del dispositivo. No se presupone que exista fecha de captura, descripción, tamaño, ancho ni otra columna adicional.
 
+### Mejoras v2
+
+- Botón de ojo para mostrar u ocultar la contraseña (accesible con teclado y táctil).
+- CAPTCHA Cloudflare Turnstile en el login y la recuperación, validado por Supabase Auth en su servidor. **Desactivado** hasta configurar `VITE_TURNSTILE_SITE_KEY` y activarlo en el panel.
+- Videos MP4 (H.264/AAC) de hasta 15 s y 5 MB, con vista previa, cancelación, progreso, portada y reproducción bajo demanda.
+- Fotos optimizadas: miniatura WebP de 480 px para la galería y versión WebP de 1600 px para el lightbox y el MIX; el original se conserva intacto.
+- Fecha del recuerdo y lugar editables, galería agrupada por mes y filtros por año, mes, lugar y tipo.
+- **MIX DE RECUERDOS**: presentación cronológica con separadores por mes, pausa, velocidad y controles.
+
+Los videos, la edición de fecha/lugar y la versión optimizada requieren la migración `supabase/migrations/20261106_recuerdos_v2.sql` (PASO 1) y `supabase/proposed-policies.sql` (PASO 2). **Ambos se aplicaron en Supabase el 8 de noviembre de 2026**: `supabase/verify-v2.sql` dio 51/51 `ok = true` y se conservaron los 3 recuerdos existentes. Sin la migración, la app seguiría funcionando en modo clásico. Pasos, verificación y limitaciones: [Mejoras v2](docs/MEJORAS.md).
+
 ## Estructura creada
 
 ```text
@@ -79,7 +90,9 @@ scripts/                           Sintaxis, configuración, dist y runner E2E
 tests/unit/                        Pruebas de servicios y fallos parciales
 tests/e2e/                         Recorridos del navegador con API simulada
 supabase/audit.sql                 Auditoría manual de solo lectura
-supabase/proposed-policies.sql     Propuesta de políticas, sin aplicar
+supabase/migrations/               PASO 1 v2: esquema y bucket, aplicado el 8/11/2026
+supabase/proposed-policies.sql     PASO 2 v2: permisos y RLS, aplicado el 8/11/2026
+supabase/verify-v2.sql             Verificación v2 de solo lectura
 docs/                              Configuración, seguridad, despliegue y pruebas
 .github/workflows/pages.yml        CI y publicación de dist
 .env.example, .gitignore, .npmrc    Configuración local sin secretos
@@ -92,7 +105,7 @@ Dependencias de producción: `@supabase/supabase-js` **2.118.0**. Desarrollo: Vi
 
 ## Configuración y publicación pendientes
 
-1. Sigue [Configuración de Supabase](docs/SUPABASE.md): clave, miembros, desactivar altas públicas y URLs de recuperación.
+1. Sigue [Configuración de Supabase](docs/SUPABASE.md): clave, miembros, desactivar altas públicas y URLs de recuperación. Para las mejoras v2 (migración, bucket y CAPTCHA), sigue [Mejoras v2](docs/MEJORAS.md).
 2. Ejecuta manualmente la auditoría de solo lectura y revisa [Seguridad](docs/SEGURIDAD.md). Las definiciones reales de las políticas no se proporcionaron: no se han dado por seguras ni se han modificado.
 3. Completa las [pruebas con ambas cuentas](docs/PRUEBAS.md), incluida la denegación de acceso anónimo directo a la API.
 4. Prepara el repositorio y sigue [GitHub Pages](docs/DESPLIEGUE.md). El workflow calcula la subruta del repositorio y publica únicamente `dist/` al subir cambios a `main`.

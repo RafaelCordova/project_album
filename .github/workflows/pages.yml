@@ -37,6 +37,8 @@ jobs:
           VITE_BASE_PATH: /project_album/
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          # Opcional: sitekey pública de Turnstile. Si no existe, el CAPTCHA queda desactivado.
+          VITE_TURNSTILE_SITE_KEY: ${{ secrets.VITE_TURNSTILE_SITE_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

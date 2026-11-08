@@ -42,16 +42,21 @@ test('sube original y miniatura, restaura sesión, abre lightbox y elimina con c
     return canvas.toDataURL('image/png').split(',')[1];
   });
   await page.locator('#photo-files').setInputFiles({ name: 'Nuestro primer recuerdo.png', mimeType: 'image/png', buffer: Buffer.from(image, 'base64') });
+  // v2: la selección se muestra primero en una vista previa y se confirma.
+  await page.getByRole('button', { name: 'Guardar en el álbum' }).click();
   await expect(page.locator('.photo-card')).toHaveCount(1);
-  expect(mock.uploads).toHaveLength(2);
+  expect(mock.uploads).toHaveLength(3);
   expect(mock.uploads[0]).toContain('/originals/');
   expect(mock.uploads[1]).toContain('/thumbnails/');
+  expect(mock.uploads[2]).toContain('/display/');
   expect(mock.rows[0].thumbnail_path).toMatch(/\.webp$/);
+  expect(mock.rows[0].display_path).toMatch(/^display\/.*\.webp$/);
   await page.reload();
   await expect(page.locator('.photo-card')).toHaveCount(1);
   await page.getByRole('button', { name: 'Ampliar Nuestro primer recuerdo.png' }).click();
   await expect(page.getByRole('dialog', { name: 'Fotografía ampliada' })).toBeVisible();
-  await expect(page.locator('.lightbox-image')).toHaveAttribute('src', /object\/sign\/recuerdos\/originals/);
+  // v2: el lightbox usa la versión optimizada, no el original.
+  await expect(page.locator('.lightbox-image')).toHaveAttribute('src', /object\/sign\/recuerdos\/display/);
   await expect(page.locator('.lightbox-image')).toBeVisible();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Eliminar Nuestro primer recuerdo.png' }).click();
